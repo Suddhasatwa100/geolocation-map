@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Your Information</title>
+</head>
+<body>
+
+    <h2>Submit Your Information</h2>
+
+    <form id="userForm" action="" method="POST">
+        <!-- Other form fields can be added here -->
+
+        <label for="latitude">Latitude:</label>
+        <input type="text" id="latitude" name="latitude">
+        <button type="button" onclick="detectLocation()">Detect My Location</button>
+        <br><br>
+
+        <label for="longitude">Longitude:</label>
+        <input type="text" id="longitude" name="longitude">
+        <br><br>
+
+        <label for="address">Address:</label>
+        <textarea id="address" name="address" cols="30" rows="3"></textarea>
+        <br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        function detectLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    document.getElementById('latitude').value = position.coords.latitude;
+                    document.getElementById('longitude').value = position.coords.longitude;
+                    getAddressFromCoordinates(position.coords.latitude, position.coords.longitude);
+                }, function (error) {
+                    console.error('Error obtaining location', error);
+                    alert('Error obtaining location. Please enter coordinates manually.');
+                });
+            } else {
+                alert('Geolocation is not supported by this browser. Please enter coordinates manually.');
+            }
+        }
+
+        function getAddressFromCoordinates(latitude, longitude) {
+            var url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + encodeURIComponent(latitude) + '&lon=' + encodeURIComponent(longitude) + '&addressdetails=1';
+
+            fetch(url, {
+                headers: {
+                    'Referer': window.location.origin // Comply with Nominatim's usage policy
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error retrieving address');
+                }
+                return response.json();
+            })
+            .then(data => {
+                var address = data.display_name;
+                document.getElementById('address').value = address;
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Error retrieving address. Please try again.');
+            });
+        }
+
+        document.getElementById('latitude').addEventListener('blur', function () {
+            var lat = this.value;
+            var lon = document.getElementById('longitude').value;
+            if (lat && lon) {
+                getAddressFromCoordinates(lat, lon);
+            }
+        });
+
+        document.getElementById('longitude').addEventListener('blur', function () {
+            var lon = this.value;
+            var lat = document.getElementById('latitude').value;
+            if (lat && lon) {
+                getAddressFromCoordinates(lat, lon);
+            }
+        });
+    </script>
+
+</body>
+</html>
